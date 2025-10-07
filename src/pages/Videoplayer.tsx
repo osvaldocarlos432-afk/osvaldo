@@ -1539,9 +1539,34 @@ const VideoPlayer: FC = () => {
               <b>After payment, send your proof of payment via Telegram for manual confirmation.</b>
             </Typography>
             {cryptoWallets.map((wallet, idx) => {
-              // Parse wallet: "CODE - Name\naddress"
-              const [header, address] = wallet.split('\n');
-              const [code, name] = header.split(' - ');
+              // Parse wallet: "CODE - Name\naddress" or handle different formats
+              const lines = wallet.split('\n');
+              let code = '';
+              let name = '';
+              let address = '';
+              
+              if (lines.length >= 2) {
+                const header = lines[0];
+                address = lines[1]?.trim() || '';
+                
+                if (header.includes(' - ')) {
+                  const parts = header.split(' - ');
+                  code = parts[0]?.trim() || '';
+                  name = parts[1]?.trim() || '';
+                } else {
+                  // If no separator, use the whole header as name
+                  name = header.trim();
+                  code = header.trim().split(' ')[0]; // Use first word as code
+                }
+              } else {
+                // Fallback: use the whole wallet string as name
+                name = wallet.trim();
+                code = wallet.trim().split(' ')[0];
+              }
+              
+              // Only render if we have a valid address
+              if (!address) return null;
+              
               return (
                 <Box key={idx} sx={{
                   display: 'flex',
@@ -1556,7 +1581,7 @@ const VideoPlayer: FC = () => {
                 }}>
                   <Box sx={{ minWidth: 40 }}>{cryptoIcons[code] || <MonetizationOnIcon fontSize="large" />}</Box>
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{name || code}</Typography>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{name || code || 'Crypto Wallet'}</Typography>
                     <Typography variant="body2" sx={{ wordBreak: 'break-all', color: theme.palette.mode === 'dark' ? '#fff' : '#222' }}>{address}</Typography>
                   </Box>
                   <Button
@@ -1575,7 +1600,7 @@ const VideoPlayer: FC = () => {
                   </Button>
                 </Box>
               );
-            })}
+            }).filter(Boolean)}
             <Box sx={{ mt: 2, textAlign: 'center' }}>
               <Button
                 variant="outlined"
