@@ -1539,13 +1539,20 @@ const VideoPlayer: FC = () => {
               <b>After payment, send your proof of payment via Telegram for manual confirmation.</b>
             </Typography>
             {cryptoWallets.map((wallet, idx) => {
-              // Parse wallet: "CODE - Name\naddress" or handle different formats
-              const lines = wallet.split('\n');
+              // Parse wallet: "CODE:address" format (from Admin.tsx)
               let code = '';
               let name = '';
               let address = '';
               
-              if (lines.length >= 2) {
+              if (wallet.includes(':')) {
+                // Format: "CODE:address"
+                const parts = wallet.split(':');
+                code = parts[0]?.trim() || '';
+                address = parts[1]?.trim() || '';
+                name = code; // Use code as name
+              } else if (wallet.includes('\n')) {
+                // Format: "CODE - Name\naddress" (legacy)
+                const lines = wallet.split('\n');
                 const header = lines[0];
                 address = lines[1]?.trim() || '';
                 
@@ -1554,14 +1561,14 @@ const VideoPlayer: FC = () => {
                   code = parts[0]?.trim() || '';
                   name = parts[1]?.trim() || '';
                 } else {
-                  // If no separator, use the whole header as name
                   name = header.trim();
-                  code = header.trim().split(' ')[0]; // Use first word as code
+                  code = header.trim().split(' ')[0];
                 }
               } else {
-                // Fallback: use the whole wallet string as name
-                name = wallet.trim();
+                // Fallback: treat as address only
+                address = wallet.trim();
                 code = wallet.trim().split(' ')[0];
+                name = 'Crypto Wallet';
               }
               
               // Only render if we have a valid address
